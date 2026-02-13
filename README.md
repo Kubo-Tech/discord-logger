@@ -1,0 +1,2 @@
+# discord-logger
+ログをdiscordに配信可能なloggerを提供するライブラリ
