@@ -184,3 +184,52 @@ def test_send_tries_all_urls_and_aggregates_failures(mocker: pytest_mock.MockerF
         publisher.send("テストメッセージ")
 
     assert mock_post.call_count == 2
+
+
+def test_send_truncates_long_message(mocker: pytest_mock.MockerFixture) -> None:
+    """2000文字を超えるメッセージが切り詰められて送信されること."""
+    mock_post = mocker.patch("discord_logger.publisher.requests.post")
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status = mocker.MagicMock()
+    mock_post.return_value = mock_response
+
+    publisher = DiscordPublisher([DUMMY_URL])
+    long_message = "あ" * 2500
+    publisher.send(long_message)
+
+    call_args = mock_post.call_args
+    content = call_args[1]["json"]["content"]
+    assert len(content) == DiscordPublisher.DISCORD_MAX_LENGTH
+    assert content.endswith(DiscordPublisher.TRUNCATION_SUFFIX)
+
+
+def test_send_does_not_truncate_exact_limit_message(mocker: pytest_mock.MockerFixture) -> None:
+    """ちょうど2000文字のメッセージは切り詰められないこと."""
+    mock_post = mocker.patch("discord_logger.publisher.requests.post")
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status = mocker.MagicMock()
+    mock_post.return_value = mock_response
+
+    publisher = DiscordPublisher([DUMMY_URL])
+    exact_message = "あ" * DiscordPublisher.DISCORD_MAX_LENGTH
+    publisher.send(exact_message)
+
+    call_args = mock_post.call_args
+    content = call_args[1]["json"]["content"]
+    assert content == exact_message
+
+
+def test_send_does_not_truncate_short_message(mocker: pytest_mock.MockerFixture) -> None:
+    """2000文字未満のメッセージは切り詰められないこと."""
+    mock_post = mocker.patch("discord_logger.publisher.requests.post")
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status = mocker.MagicMock()
+    mock_post.return_value = mock_response
+
+    publisher = DiscordPublisher([DUMMY_URL])
+    short_message = "テストメッセージ"
+    publisher.send(short_message)
+
+    call_args = mock_post.call_args
+    content = call_args[1]["json"]["content"]
+    assert content == short_message

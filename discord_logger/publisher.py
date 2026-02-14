@@ -30,6 +30,12 @@ class DiscordPublisher:
     # ログフォーマット
     LOG_FORMAT = "[%(asctime)s][%(name)s][%(levelname)s] %(message)s"
 
+    # Discordメッセージの最大文字数
+    DISCORD_MAX_LENGTH = 2000
+
+    # 切り詰め時の省略記号
+    TRUNCATION_SUFFIX = "\n...(メッセージが長すぎるため省略されました)"
+
     # メンション対象のログレベル
     MENTION_LEVELS = {"ERROR", "CRITICAL"}
 
@@ -66,29 +72,10 @@ class DiscordPublisher:
         self._discord_user_id = discord_user_id
         self._formatter = logging.Formatter(self.LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
 
-    def _format_message(self, level: str, message: str) -> str:
-        """ログフォーマットに従ってメッセージを整形する.
-
-        Args:
-            level: ログレベル文字列
-            message: ログメッセージ
-
-        Returns:
-            str: 整形済みのメッセージ
-        """
-        record = logging.LogRecord(
-            name=self._name,
-            level=getattr(logging, level.upper()),
-            pathname="",
-            lineno=0,
-            msg=message,
-            args=None,
-            exc_info=None,
-        )
-        return self._formatter.format(record)
-
     def send(self, message: str) -> None:
         """全てのWebhook URLにメッセージを送信する.
+
+        メッセージがDiscordの文字数制限（2000文字）を超える場合、自動的に切り詰められる。
 
         Args:
             message: 送信するメッセージ（整形済み）
@@ -96,7 +83,8 @@ class DiscordPublisher:
         Raises:
             WebhookError: Webhookへの送信に失敗した場合
         """
-        data = {"content": message}
+        truncated = self._truncate_message(message)
+        data = {"content": truncated}
         failed_urls: list[str] = []
         last_error: requests.RequestException | None = None
         for url in self.webhook_urls:
@@ -127,3 +115,38 @@ class DiscordPublisher:
         if self._discord_user_id and level.upper() in self.MENTION_LEVELS:
             formatted = f"<@{self._discord_user_id}>\n{formatted}"
         self.send(formatted)
+
+    def _format_message(self, level: str, message: str) -> str:
+        """ログフォーマットに従ってメッセージを整形する.
+
+        Args:
+            level: ログレベル文字列
+            message: ログメッセージ
+
+        Returns:
+            str: 整形済みのメッセージ
+        """
+        record = logging.LogRecord(
+            name=self._name,
+            level=getattr(logging, level.upper()),
+            pathname="",
+            lineno=0,
+            msg=message,
+            args=None,
+            exc_info=None,
+        )
+        return self._formatter.format(record)
+
+    def _truncate_message(self, message: str) -> str:
+        """メッセージがDiscordの文字数制限を超える場合に切り詰める.
+
+        Args:
+            message: 元のメッセージ
+
+        Returns:
+            str: 文字数制限内に収まるメッセージ
+        """
+        if len(message) <= self.DISCORD_MAX_LENGTH:
+            return message
+        truncated_length = self.DISCORD_MAX_LENGTH - len(self.TRUNCATION_SUFFIX)
+        return message[:truncated_length] + self.TRUNCATION_SUFFIX
