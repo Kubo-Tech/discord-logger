@@ -11,6 +11,7 @@ import requests
 from dotenv import load_dotenv
 
 from discord_logger.exceptions import WebhookError
+from discord_logger.logger import normalize_log_level
 
 load_dotenv()
 
@@ -120,15 +121,19 @@ class DiscordPublisher:
         """ログフォーマットに従ってメッセージを整形する.
 
         Args:
-            level: ログレベル文字列
+            level: ログレベル文字列（DEBUG, INFO, WARNING, ERROR, CRITICALのいずれか）
             message: ログメッセージ
 
         Returns:
             str: 整形済みのメッセージ
+
+        Raises:
+            ConfigError: 無効なログレベルが指定された場合
         """
+        numeric_level = normalize_log_level(level)
         record = logging.LogRecord(
             name=self._name,
-            level=getattr(logging, level.upper()),
+            level=numeric_level,
             pathname="",
             lineno=0,
             msg=message,

@@ -5,7 +5,7 @@ import pytest_mock
 import requests
 
 from discord_logger import DiscordPublisher
-from discord_logger.exceptions import WebhookError
+from discord_logger.exceptions import ConfigError, WebhookError
 
 DUMMY_URL = "https://discord.com/api/webhooks/dummy"
 
@@ -233,3 +233,19 @@ def test_send_does_not_truncate_short_message(mocker: pytest_mock.MockerFixture)
     call_args = mock_post.call_args
     content = call_args[1]["json"]["content"]
     assert content == short_message
+
+
+def test_publish_raises_config_error_on_invalid_level() -> None:
+    """無効なログレベルを指定した場合ConfigErrorが発生すること."""
+    publisher = DiscordPublisher([DUMMY_URL])
+
+    with pytest.raises(ConfigError, match="不正なログレベルです"):
+        publisher.publish("INVALID_LEVEL", "テストメッセージ")
+
+
+def test_publish_raises_config_error_message_contains_invalid_level() -> None:
+    """エラーメッセージに指定された無効なレベル名が含まれること."""
+    publisher = DiscordPublisher([DUMMY_URL])
+
+    with pytest.raises(ConfigError, match="INVALID_LEVEL"):
+        publisher.publish("INVALID_LEVEL", "テストメッセージ")

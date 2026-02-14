@@ -7,8 +7,8 @@ from discord_logger import DiscordLogger
 if __name__ == "__main__":
 
     # 設定
-    webhook_urls = [""]  # DiscordのWebhook URLを指定
-    discord_user_id = ""  # メンションしたいユーザーのIDを指定
+    webhook_urls = ["YOUR_WEBHOOK_URL_HERE"]  # DiscordのWebhook URLを指定
+    discord_user_id = "YOUR_DISCORD_USER_ID_HERE"  # メンションしたいユーザーのIDを指定
 
     # DiscordLoggerのインスタンスを作成
     dlogger = DiscordLogger(webhook_urls, name="example", discord_user_id=discord_user_id)
