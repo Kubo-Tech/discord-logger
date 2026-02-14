@@ -32,6 +32,7 @@ class DiscordLogger(Logger):
         level: int = logging.INFO,
         discord_level: int = logging.INFO,
         discord_user_id: str = "",
+        timeout: int = DiscordPublisher.DEFAULT_TIMEOUT,
     ) -> None:
         """DiscordLoggerを初期化する.
 
@@ -42,6 +43,7 @@ class DiscordLogger(Logger):
             level: ログレベル
             discord_level: Discord送信のしきい値ログレベル。このレベル以上のログをDiscordに送信する
             discord_user_id: DiscordのユーザーID。指定した場合、ERROR/CRITICALでメンションする
+            timeout: Webhook送信時のタイムアウト秒数
         """
         # nameが空文字列の場合は呼び出し元のディレクトリパスを使用
         if not name:
@@ -55,7 +57,10 @@ class DiscordLogger(Logger):
 
         super().__init__(name=name, log_dir=log_dir, level=level)
         self.discord_publisher = DiscordPublisher(
-            webhook_urls=webhook_urls, name=name, discord_user_id=discord_user_id
+            webhook_urls=webhook_urls,
+            name=name,
+            discord_user_id=discord_user_id,
+            timeout=timeout,
         )
         self.discord_level = discord_level
 
