@@ -158,6 +158,7 @@ dlogger.error("メンション付きでDiscordに送信される")
 | `level` | `int` | `logging.INFO` | ログレベル |
 | `discord_level` | `int` | `logging.INFO` | Discord送信のしきい値ログレベル |
 | `discord_user_id` | `str` | `""` | DiscordのユーザーID。空文字列の場合は環境変数を参照 |
+| `timeout` | `int` | 10 | Webhook送信時のタイムアウト秒数 |
 
 ### Logger
 
@@ -174,6 +175,7 @@ dlogger.error("メンション付きでDiscordに送信される")
 | `webhook_urls` | `list[str]` | （必須） | DiscordのWebhook URLのリスト |
 | `name` | `str` | `""` | ロガー名。空文字列の場合は呼び出し元のディレクトリパスを使用 |
 | `discord_user_id` | `str` | `""` | DiscordのユーザーID。空文字列の場合は環境変数を参照 |
+| `timeout` | `int` | 10 | Webhook送信時のタイムアウト秒数 |
 
 ## エラーハンドリング
 
