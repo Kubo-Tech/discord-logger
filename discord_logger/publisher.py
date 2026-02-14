@@ -6,6 +6,7 @@ DiscordのWebhook URLを利用してメッセージを送信する機能を提�
 import inspect
 import logging
 import os
+import re
 
 import requests
 from dotenv import load_dotenv
@@ -37,6 +38,11 @@ class DiscordPublisher:
     # 切り詰め時の省略記号
     TRUNCATION_SUFFIX = "\n...(メッセージが長すぎるため省略されました)"
 
+    # Discord Webhook URLの正規表現パターン
+    WEBHOOK_URL_PATTERN = re.compile(
+        r"^https://(discord\.com|discordapp\.com)/api/webhooks/\d+/.+$"
+    )
+
     # メンション対象のログレベル
     MENTION_LEVELS = {"ERROR", "CRITICAL"}
 
@@ -54,10 +60,11 @@ class DiscordPublisher:
             discord_user_id: DiscordのユーザーID。指定した場合、ERROR/CRITICALでメンションする
 
         Raises:
-            WebhookError: webhook_urlsが空の場合
+            WebhookError: webhook_urlsが空の場合、またはURLの形式が不正な場合
         """
         if not webhook_urls:
             raise WebhookError("webhook_urlsは1つ以上のURLを含む必要があります")
+        self._validate_webhook_urls(webhook_urls)
         # nameが空文字列の場合は呼び出し元のディレクトリパスを使用
         if not name:
             caller_frame = inspect.stack()[1]
@@ -72,6 +79,21 @@ class DiscordPublisher:
         self._name = name
         self._discord_user_id = discord_user_id
         self._formatter = logging.Formatter(self.LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+
+    @classmethod
+    def _validate_webhook_urls(cls, webhook_urls: list[str]) -> None:
+        """各Webhook URLの形式を検証する.
+
+        Args:
+            webhook_urls: 検証対象のURLリスト
+
+        Raises:
+            WebhookError: URLの形式が不正な場合
+        """
+        invalid_urls = [url for url in webhook_urls if not cls.WEBHOOK_URL_PATTERN.match(url)]
+        if invalid_urls:
+            invalid_urls_text = ", ".join(invalid_urls)
+            raise WebhookError(f"不正なWebhook URLが含まれています: {invalid_urls_text}")
 
     def send(self, message: str) -> None:
         """全てのWebhook URLにメッセージを送信する.

@@ -7,7 +7,7 @@ import pytest_mock
 
 from discord_logger import DiscordLogger
 
-DUMMY_URL = "https://discord.com/api/webhooks/dummy"
+DUMMY_URL = "https://discord.com/api/webhooks/1234567890/dummytoken"
 
 
 # 正常系

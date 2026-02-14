@@ -7,7 +7,7 @@ import requests
 from discord_logger import DiscordPublisher
 from discord_logger.exceptions import ConfigError, WebhookError
 
-DUMMY_URL = "https://discord.com/api/webhooks/dummy"
+DUMMY_URL = "https://discord.com/api/webhooks/1234567890/dummytoken"
 
 
 # 正常系
@@ -31,7 +31,7 @@ def test_send_calls_all_urls(mocker: pytest_mock.MockerFixture) -> None:
     mock_response.raise_for_status = mocker.MagicMock()
     mock_post.return_value = mock_response
 
-    urls = [DUMMY_URL, "https://discord.com/api/webhooks/dummy2"]
+    urls = [DUMMY_URL, "https://discord.com/api/webhooks/9876543210/dummytoken2"]
     publisher = DiscordPublisher(urls)
     publisher.send("テストメッセージ")
 
@@ -163,8 +163,8 @@ def test_send_raises_webhook_error_on_http_error(mocker: pytest_mock.MockerFixtu
 
 def test_send_tries_all_urls_and_aggregates_failures(mocker: pytest_mock.MockerFixture) -> None:
     """一部URLが失敗しても全URLを試行し、最後に失敗を集約して送出すること."""
-    url_ok = "https://discord.com/api/webhooks/ok"
-    url_fail = "https://discord.com/api/webhooks/fail"
+    url_ok = "https://discord.com/api/webhooks/1111111111/oktoken"
+    url_fail = "https://discord.com/api/webhooks/2222222222/failtoken"
 
     mock_success_response = mocker.MagicMock()
     mock_success_response.raise_for_status = mocker.MagicMock()
@@ -180,7 +180,7 @@ def test_send_tries_all_urls_and_aggregates_failures(mocker: pytest_mock.MockerF
 
     publisher = DiscordPublisher([url_fail, url_ok])
 
-    with pytest.raises(WebhookError, match=url_fail):
+    with pytest.raises(WebhookError, match="failtoken"):
         publisher.send("テストメッセージ")
 
     assert mock_post.call_count == 2

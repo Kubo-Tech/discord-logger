@@ -8,7 +8,7 @@ import pytest
 from discord_logger import DiscordLogger
 from discord_logger.exceptions import WebhookError
 
-DUMMY_URL = "https://discord.com/api/webhooks/dummy"
+DUMMY_URL = "https://discord.com/api/webhooks/1234567890/dummytoken"
 
 
 # 正常系
