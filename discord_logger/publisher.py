@@ -26,6 +26,7 @@ class DiscordPublisher:
         webhook_urls: DiscordのWebhook URLのリスト
         _name: ロガー名
         _discord_user_id: DiscordのユーザーID。指定した場合、ERROR/CRITICALでメンションする
+        _timeout: Webhook送信時のタイムアウト秒数
         _formatter: ログフォーマット用のFormatterインスタンス
     """
 
@@ -46,11 +47,15 @@ class DiscordPublisher:
     # メンション対象のログレベル
     MENTION_LEVELS = {"ERROR", "CRITICAL"}
 
+    # Webhook送信時のデフォルトタイムアウト（秒）
+    DEFAULT_TIMEOUT = 10
+
     def __init__(
         self,
         webhook_urls: list[str],
         name: str = "",
         discord_user_id: str = "",
+        timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         """DiscordPublisherを初期化する.
 
@@ -58,6 +63,7 @@ class DiscordPublisher:
             webhook_urls: DiscordのWebhook URLのリスト
             name: ロガー名（フォーマットに使用。空文字列の場合は呼び出し元のディレクトリパスを使用）
             discord_user_id: DiscordのユーザーID。指定した場合、ERROR/CRITICALでメンションする
+            timeout: Webhook送信時のタイムアウト秒数
 
         Raises:
             WebhookError: webhook_urlsが空の場合、またはURLの形式が不正な場合
@@ -78,6 +84,7 @@ class DiscordPublisher:
         self.webhook_urls = webhook_urls
         self._name = name
         self._discord_user_id = discord_user_id
+        self._timeout = timeout
         self._formatter = logging.Formatter(self.LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
 
     @classmethod
@@ -112,7 +119,7 @@ class DiscordPublisher:
         last_error: requests.RequestException | None = None
         for url in self.webhook_urls:
             try:
-                response = requests.post(url, json=data, timeout=10)
+                response = requests.post(url, json=data, timeout=self._timeout)
                 response.raise_for_status()
             except requests.RequestException as error:
                 failed_urls.append(url)
