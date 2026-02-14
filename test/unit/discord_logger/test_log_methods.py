@@ -6,6 +6,7 @@ import pytest
 import pytest_mock
 
 from discord_logger import DiscordLogger
+from discord_logger.exceptions import WebhookError
 
 DUMMY_URL = "https://discord.com/api/webhooks/1234567890/dummytoken"
 
@@ -93,3 +94,71 @@ def test_info_still_outputs_to_console(
     dlogger.info("コンソール出力テスト")
     captured = capfd.readouterr()
     assert "コンソール出力テスト" in captured.out
+
+
+# 異常系
+def test_info_does_not_raise_on_webhook_error(mocker: pytest_mock.MockerFixture) -> None:
+    """Discord送信でWebhookErrorが発生してもinfoが例外を送出しないこと."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger([DUMMY_URL], name="test_webhook_error")
+    dlogger.info("テストメッセージ")
+
+
+def test_debug_does_not_raise_on_webhook_error(mocker: pytest_mock.MockerFixture) -> None:
+    """Discord送信でWebhookErrorが発生してもdebugが例外を送出しないこと."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger(
+        [DUMMY_URL], name="test_webhook_error", level=logging.DEBUG, discord_level=logging.DEBUG
+    )
+    dlogger.debug("テストメッセージ")
+
+
+def test_warning_does_not_raise_on_webhook_error(mocker: pytest_mock.MockerFixture) -> None:
+    """Discord送信でWebhookErrorが発生してもwarningが例外を送出しないこと."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger([DUMMY_URL], name="test_webhook_error")
+    dlogger.warning("テストメッセージ")
+
+
+def test_error_does_not_raise_on_webhook_error(mocker: pytest_mock.MockerFixture) -> None:
+    """Discord送信でWebhookErrorが発生してもerrorが例外を送出しないこと."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger([DUMMY_URL], name="test_webhook_error")
+    dlogger.error("テストメッセージ")
+
+
+def test_critical_does_not_raise_on_webhook_error(mocker: pytest_mock.MockerFixture) -> None:
+    """Discord送信でWebhookErrorが発生してもcriticalが例外を送出しないこと."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger([DUMMY_URL], name="test_webhook_error")
+    dlogger.critical("テストメッセージ")
+
+
+def test_webhook_error_logs_warning_locally(
+    mocker: pytest_mock.MockerFixture, capfd: pytest.CaptureFixture[str]
+) -> None:
+    """Discord送信失敗時にローカルログに警告が出力されること."""
+    mocker.patch(
+        "discord_logger.discord_logger.DiscordPublisher.publish",
+        side_effect=WebhookError("送信失敗"),
+    )
+    dlogger = DiscordLogger([DUMMY_URL], name="test_webhook_warning")
+    dlogger.info("テストメッセージ")
+    captured = capfd.readouterr()
+    assert "Discord送信に失敗しました" in captured.out
+    assert "テストメッセージ" in captured.out

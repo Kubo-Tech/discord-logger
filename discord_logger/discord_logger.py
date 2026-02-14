@@ -7,6 +7,7 @@ import inspect
 import logging
 import os
 
+from discord_logger.exceptions import WebhookError
 from discord_logger.logger import Logger, normalize_log_level
 from discord_logger.publisher import DiscordPublisher
 
@@ -74,7 +75,7 @@ class DiscordLogger(Logger):
         """
         super().info(message)
         if self._should_send_to_discord(logging.INFO):
-            self.discord_publisher.publish("INFO", message)
+            self._safe_publish("INFO", message)
 
     def debug(self, message: str) -> None:
         """DEBUGレベルのログを出力する.
@@ -84,7 +85,7 @@ class DiscordLogger(Logger):
         """
         super().debug(message)
         if self._should_send_to_discord(logging.DEBUG):
-            self.discord_publisher.publish("DEBUG", message)
+            self._safe_publish("DEBUG", message)
 
     def warning(self, message: str) -> None:
         """WARNINGレベルのログを出力する.
@@ -94,7 +95,7 @@ class DiscordLogger(Logger):
         """
         super().warning(message)
         if self._should_send_to_discord(logging.WARNING):
-            self.discord_publisher.publish("WARNING", message)
+            self._safe_publish("WARNING", message)
 
     def error(self, message: str) -> None:
         """ERRORレベルのログを出力する.
@@ -104,7 +105,7 @@ class DiscordLogger(Logger):
         """
         super().error(message)
         if self._should_send_to_discord(logging.ERROR):
-            self.discord_publisher.publish("ERROR", message)
+            self._safe_publish("ERROR", message)
 
     def critical(self, message: str) -> None:
         """CRITICALレベルのログを出力する.
@@ -114,7 +115,22 @@ class DiscordLogger(Logger):
         """
         super().critical(message)
         if self._should_send_to_discord(logging.CRITICAL):
-            self.discord_publisher.publish("CRITICAL", message)
+            self._safe_publish("CRITICAL", message)
+
+    def _safe_publish(self, level: str, message: str) -> None:
+        """Discord送信を安全に実行する.
+
+        WebhookErrorが発生した場合はローカルログに警告を出力し、
+        アプリケーションフローを中断しない。
+
+        Args:
+            level: ログレベル文字列
+            message: ログメッセージ
+        """
+        try:
+            self.discord_publisher.publish(level, message)
+        except WebhookError:
+            super().warning(f"Discord送信に失敗しました（{level}）: {message}")
 
     def _should_send_to_discord(self, level: int) -> bool:
         """指定されたログレベルがDiscord送信対象かどうかを判定する.
