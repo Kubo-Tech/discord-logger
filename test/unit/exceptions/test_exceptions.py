@@ -20,7 +20,7 @@ def test_config_error_is_discord_logger_error() -> None:
 
 
 def test_discord_logger_error_can_be_raised() -> None:
-    """DiscordLoggerErrorが送出できること."""
+    """DiscordLoggerErrorが送出できること."""  # noqa: DOC501
     try:
         raise DiscordLoggerError("テストエラー")
     except DiscordLoggerError as error:
@@ -28,7 +28,7 @@ def test_discord_logger_error_can_be_raised() -> None:
 
 
 def test_webhook_error_can_be_caught_as_base() -> None:
-    """WebhookErrorがDiscordLoggerErrorとしてキャッチできること."""  # noqa: DAR401
+    """WebhookErrorがDiscordLoggerErrorとしてキャッチできること."""  # noqa: DOC501
     try:
         raise WebhookError("Webhookエラー")
     except DiscordLoggerError as error:
@@ -36,7 +36,7 @@ def test_webhook_error_can_be_caught_as_base() -> None:
 
 
 def test_config_error_can_be_caught_as_base() -> None:
-    """ConfigErrorがDiscordLoggerErrorとしてキャッチできること."""  # noqa: DAR401
+    """ConfigErrorがDiscordLoggerErrorとしてキャッチできること."""  # noqa: DOC501
     try:
         raise ConfigError("設定エラー")
     except DiscordLoggerError as error:

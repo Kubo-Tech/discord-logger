@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    uses: KeibaAI-developer/library-workflow/.github/workflows/ci.yml@main
+    uses: KeibaAI-developer/library-workflow/.github/workflows/ci.yml@feat/migrate-to-ruff
     with:
       package_name: discord_logger
       repo_name: discord-logger
