@@ -110,25 +110,23 @@ class DiscordPublisher:
             message: 送信するメッセージ（整形済み）
 
         Raises:
-            WebhookError: Webhookへの送信に失敗した場合
+            WebhookError: Webhookへの送信に失敗した場合。メッセージにはトークンを伏せたURLと
+                例外の種類だけを含める
         """
         truncated = self._truncate_message(message)
         data = {"content": truncated}
-        failed_urls: list[str] = []
-        last_error: requests.RequestException | None = None
+        failures: list[str] = []
         for url in self.webhook_urls:
             try:
                 response = requests.post(url, json=data, timeout=self._timeout)
                 response.raise_for_status()
             except requests.RequestException as error:
-                failed_urls.append(url)
-                last_error = error
+                failures.append(f"{_mask_webhook_url(url)}（{type(error).__name__}）")
 
-        if failed_urls:
-            failed_urls_text = ", ".join(failed_urls)
-            raise WebhookError(
-                f"Webhook送信に失敗したURLがあります: {failed_urls_text}"
-            ) from last_error
+        if failures:
+            # Webhook URL はトークンを含むため、例外メッセージにも原因例外にも生のURLを残さない
+            failures_text = ", ".join(failures)
+            raise WebhookError(f"Webhook送信に失敗したURLがあります: {failures_text}") from None
 
     def publish(self, level: str, message: str) -> None:
         """ログフォーマットに従ってメッセージを整形し送信する.
@@ -219,3 +217,16 @@ def _normalize_log_level(level: int | str) -> int:
     if level_name not in level_mapping:
         raise ConfigError(f"不正なログレベルです: {level}")
     return level_mapping[level_name]
+
+
+def _mask_webhook_url(url: str) -> str:
+    """Webhook URL のトークン部分を伏せる.
+
+    Args:
+        url: Webhook URL（.../api/webhooks/{id}/{token}）
+
+    Returns:
+        str: トークンを "***" に置き換えた URL
+    """
+    head, _, _ = url.rpartition("/")
+    return f"{head}/***"
