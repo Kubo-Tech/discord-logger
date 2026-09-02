@@ -1,7 +1,7 @@
 """discord-logger: DiscordのWebhookを利用したロギングライブラリ.
 
-このライブラリは、Pythonの標準loggingインターフェースに準拠したロガーに加え、
-DiscordのWebhookを通じてログメッセージを送信する機能を提供します。
+標準のloggingに組み込むハンドラ（DiscordHandler）と、Webhookへの送信そのものを行う
+DiscordPublisherを提供する。
 """
 
 try:
@@ -11,16 +11,14 @@ try:
 except (PackageNotFoundError, ImportError):
     __version__ = "unknown"
 
-from discord_logger.discord_logger import DiscordLogger
 from discord_logger.exceptions import ConfigError, DiscordLoggerError, WebhookError
-from discord_logger.logger import Logger
+from discord_logger.handler import DiscordHandler
 from discord_logger.publisher import DiscordPublisher
 
 __all__ = [
     "ConfigError",
-    "DiscordLogger",
+    "DiscordHandler",
     "DiscordLoggerError",
     "DiscordPublisher",
-    "Logger",
     "WebhookError",
 ]

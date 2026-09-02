@@ -180,10 +180,30 @@ def test_send_tries_all_urls_and_aggregates_failures(mocker: pytest_mock.MockerF
 
     publisher = DiscordPublisher([url_fail, url_ok])
 
-    with pytest.raises(WebhookError, match="failtoken"):
+    with pytest.raises(WebhookError, match=r"2222222222/\*\*\*") as exc_info:
         publisher.send("テストメッセージ")
 
     assert mock_post.call_count == 2
+    assert "failtoken" not in str(exc_info.value)
+    assert "oktoken" not in str(exc_info.value)
+
+
+def test_send_failure_does_not_expose_webhook_token(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """送信失敗の例外メッセージと原因例外にWebhookのトークンを含めないこと."""
+    mocker.patch(
+        "discord_logger.publisher.requests.post",
+        side_effect=requests.ConnectionError(f"failed: {DUMMY_URL}"),
+    )
+    publisher = DiscordPublisher([DUMMY_URL])
+
+    with pytest.raises(WebhookError) as exc_info:
+        publisher.send("テストメッセージ")
+
+    assert "dummytoken" not in str(exc_info.value)
+    assert "ConnectionError" in str(exc_info.value)
+    assert exc_info.value.__cause__ is None
 
 
 def test_send_truncates_long_message(mocker: pytest_mock.MockerFixture) -> None:
