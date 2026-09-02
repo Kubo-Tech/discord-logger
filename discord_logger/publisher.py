@@ -11,8 +11,7 @@ import re
 import requests
 from dotenv import load_dotenv
 
-from discord_logger.exceptions import WebhookError
-from discord_logger.logger import normalize_log_level
+from discord_logger.exceptions import ConfigError, WebhookError
 
 load_dotenv()
 
@@ -141,10 +140,24 @@ class DiscordPublisher:
             level: ログレベル文字列
             message: ログメッセージ
         """
-        formatted = self._format_message(level, message)
+        self.send_with_mention(level, self._format_message(level, message))
+
+    def send_with_mention(self, level: str, message: str) -> None:
+        """整形済みメッセージに必要に応じてメンションを付けて送信する.
+
+        ERROR/CRITICALかつdiscord_user_idが設定されている場合、
+        メッセージの先頭にメンションを付与する。
+
+        Args:
+            level: ログレベル文字列
+            message: 送信するメッセージ（整形済み）
+
+        Raises:
+            WebhookError: Webhookへの送信に失敗した場合
+        """
         if self._discord_user_id and level.upper() in self.MENTION_LEVELS:
-            formatted = f"<@{self._discord_user_id}>\n{formatted}"
-        self.send(formatted)
+            message = f"<@{self._discord_user_id}>\n{message}"
+        self.send(message)
 
     def _format_message(self, level: str, message: str) -> str:
         """ログフォーマットに従ってメッセージを整形する.
@@ -159,7 +172,7 @@ class DiscordPublisher:
         Raises:
             ConfigError: 無効なログレベルが指定された場合
         """
-        numeric_level = normalize_log_level(level)
+        numeric_level = _normalize_log_level(level)
         record = logging.LogRecord(
             name=self._name,
             level=numeric_level,
@@ -184,3 +197,25 @@ class DiscordPublisher:
             return message
         truncated_length = self.DISCORD_MAX_LENGTH - len(self.TRUNCATION_SUFFIX)
         return message[:truncated_length] + self.TRUNCATION_SUFFIX
+
+
+def _normalize_log_level(level: int | str) -> int:
+    """ログレベルを整数値に正規化する.
+
+    Args:
+        level: ログレベル（整数または文字列）
+
+    Returns:
+        int: loggingモジュールで扱える整数ログレベル
+
+    Raises:
+        ConfigError: 文字列ログレベルが不正な場合
+    """
+    if isinstance(level, int):
+        return level
+
+    level_name = level.upper()
+    level_mapping = logging.getLevelNamesMapping()
+    if level_name not in level_mapping:
+        raise ConfigError(f"不正なログレベルです: {level}")
+    return level_mapping[level_name]
