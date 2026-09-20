@@ -2,6 +2,7 @@
 
 import logging
 
+from discord_logger.formatter import DATE_FORMAT, LOG_FORMAT
 from discord_logger.publisher import DiscordPublisher
 
 
@@ -46,9 +47,7 @@ class DiscordHandler(logging.Handler):
             discord_user_id=discord_user_id,
             timeout=timeout,
         )
-        self.setFormatter(
-            logging.Formatter(DiscordPublisher.LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
-        )
+        self.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
 
     def emit(self, record: logging.LogRecord) -> None:
         """レコードを整形してDiscordへ送信する.

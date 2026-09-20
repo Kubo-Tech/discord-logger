@@ -1,11 +1,14 @@
 """discord-loggerの基本的な使用例.
 
 標準のloggingにDiscordHandlerを付け、運用ログ用と配信用でチャンネルを分ける構成を示す。
+コンソールは色付き、ファイルは日付でローテーションする出力も合わせて示す。
 """
 
 import logging
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
-from discord_logger import DiscordHandler
+from discord_logger import DATE_FORMAT, LOG_FORMAT, ColoredFormatter, DiscordHandler
 
 if __name__ == "__main__":
     # 設定
@@ -16,7 +19,18 @@ if __name__ == "__main__":
     # 運用ログ: アプリのロガーにハンドラを付ける。子ロガーのログも伝播して送信される
     logger = logging.getLogger("example")
     logger.setLevel(logging.INFO)
-    logger.addHandler(logging.StreamHandler())
+
+    # コンソールは色付き
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(ColoredFormatter())
+    logger.addHandler(console_handler)
+
+    # ファイルは日付でローテーション（解析用に色を付けない）
+    Path("logs").mkdir(exist_ok=True)
+    file_handler = TimedRotatingFileHandler("logs/example.log", when="midnight", backupCount=7)
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
+    logger.addHandler(file_handler)
+
     logger.addHandler(DiscordHandler(log_webhook_urls, discord_user_id=discord_user_id))
 
     logger.info("処理を開始します")

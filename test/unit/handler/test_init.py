@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from discord_logger import DiscordHandler, DiscordPublisher
+from discord_logger import LOG_FORMAT, DiscordHandler
 from discord_logger.exceptions import WebhookError
 
 DUMMY_URL = "https://discord.com/api/webhooks/1234567890/dummytoken"
@@ -24,10 +24,10 @@ def test_init_custom_level() -> None:
 
 
 def test_init_sets_default_formatter() -> None:
-    """既定のフォーマッタがDiscordPublisher.LOG_FORMATであること."""
+    """既定のフォーマッタがLOG_FORMATであること."""
     handler = DiscordHandler([DUMMY_URL])
     assert handler.formatter is not None
-    assert handler.formatter._fmt == DiscordPublisher.LOG_FORMAT
+    assert handler.formatter._fmt == LOG_FORMAT
 
 
 def test_init_passes_settings_to_publisher(monkeypatch: pytest.MonkeyPatch) -> None:

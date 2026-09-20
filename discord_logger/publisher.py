@@ -12,6 +12,7 @@ import requests
 from dotenv import load_dotenv
 
 from discord_logger.exceptions import ConfigError, WebhookError
+from discord_logger.formatter import DATE_FORMAT, LOG_FORMAT
 
 load_dotenv()
 
@@ -28,9 +29,6 @@ class DiscordPublisher:
         _timeout: Webhook送信時のタイムアウト秒数
         _formatter: ログフォーマット用のFormatterインスタンス
     """
-
-    # ログフォーマット
-    LOG_FORMAT = "[%(asctime)s][%(name)s][%(levelname)s] %(message)s"
 
     # Discordメッセージの最大文字数
     DISCORD_MAX_LENGTH = 2000
@@ -84,7 +82,7 @@ class DiscordPublisher:
         self._name = name
         self._discord_user_id = discord_user_id
         self._timeout = timeout
-        self._formatter = logging.Formatter(self.LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S")
+        self._formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
 
     @classmethod
     def _validate_webhook_urls(cls, webhook_urls: list[str]) -> None:

@@ -41,6 +41,7 @@ pip install -e /path/to/discord-logger
 ## ログフォーマット
 
 ハンドラの既定フォーマットは以下の通りです。`setFormatter`で変更できます。
+`LOG_FORMAT`（フォーマット）と`DATE_FORMAT`（日時）として公開しており、他のハンドラでも同じ書式を使えます。
 
 ```
 [%(asctime)s][%(name)s][%(levelname)s] %(message)s
@@ -51,6 +52,15 @@ pip install -e /path/to/discord-logger
 ```
 [2026-02-14 12:00:00][example][INFO] This is an info message.
 ```
+
+`ColoredFormatter`を使うと、コンソール出力にログレベルごとの色が付きます。
+
+| ログレベル | 色 |
+|---|---|
+| DEBUG | 色なし |
+| INFO | 緑 |
+| WARNING | 黄色 |
+| ERROR / CRITICAL | 赤 |
 
 ## 使い方
 
@@ -68,6 +78,48 @@ logger.addHandler(DiscordHandler(["https://discord.com/api/webhooks/your_webhook
 
 logger.info("コンソールとDiscordの両方に出力される")
 logger.error("ERROR/CRITICALはユーザーIDが設定されていればメンション付きで送信される")
+```
+
+### コンソールに色を付ける
+
+`ColoredFormatter`は`logging.Formatter`のサブクラスなので、`logging.StreamHandler`にそのまま設定できます。
+ANSIエスケープを付けるため、ファイル出力やDiscordへの送信には使いません。
+
+```python
+import logging
+
+from discord_logger import ColoredFormatter, DiscordHandler
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.INFO)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(ColoredFormatter())
+logger.addHandler(console_handler)
+logger.addHandler(DiscordHandler(["https://discord.com/api/webhooks/your_webhook_url"]))
+
+logger.warning("コンソールでは黄色、Discordでは色なしで出力される")
+```
+
+### ファイルへ出力する
+
+標準の`logging`のハンドラを追加します。日付でローテーションする場合は`TimedRotatingFileHandler`を使います。
+
+```python
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
+from discord_logger import DATE_FORMAT, LOG_FORMAT, DiscordHandler
+
+logger = logging.getLogger("my_app")
+logger.setLevel(logging.INFO)
+
+file_handler = TimedRotatingFileHandler("logs/my_app.log", when="midnight", backupCount=7)
+file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT))
+logger.addHandler(file_handler)
+logger.addHandler(DiscordHandler(["https://discord.com/api/webhooks/your_webhook_url"]))
+
+logger.info("ファイルとDiscordの両方に出力される")
 ```
 
 ### ライブラリへ注入したロガーのログを送る
@@ -135,6 +187,13 @@ publisher.publish("INFO", "Discordにのみ送信")
 | `name` | `str` | `""` | ロガー名。空文字列の場合は呼び出し元のディレクトリパスを使用 |
 | `discord_user_id` | `str` | `""` | DiscordのユーザーID。空文字列の場合は環境変数を参照 |
 | `timeout` | `int` | 10 | Webhook送信時のタイムアウト秒数 |
+
+### ColoredFormatter
+
+| パラメータ | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `fmt` | `str` | `LOG_FORMAT` | ログフォーマット |
+| `datefmt` | `str` | `DATE_FORMAT` | 日時のフォーマット |
 
 ## エラーハンドリング
 
